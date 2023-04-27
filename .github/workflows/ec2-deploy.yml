@@ -1,0 +1,33 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Connect to EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_PRIVATE_KEY }}
+
+      - name: Create directory
+        run: ssh ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} mkdir -p /var/www/html
+
+      - name: Copy files
+        uses: appleboy/scp-action@master
+        with:
+          source: index.html
+          target: ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:/var/www/html/
+
+      - name: Start web server
+        run: ssh ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} sudo systemctl start apache2
